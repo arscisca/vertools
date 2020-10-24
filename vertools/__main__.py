@@ -5,12 +5,19 @@ import vertools.context
 
 def main():
     """Main function"""
-    # Read configuration files
-    base_context = vertools.context.Context.from_config(vertools.rootdir/'assets/default.config')
+    # Generate context
+    context = vertools.context.Context()
+    global_config = vertools.context.Scope.from_config(vertools.rootdir/'assets/default.config')
+    context.append_local(global_config)
     # Parse command line arguments
     args = vertools.cli.parse()
+    if args.local_config is not None:
+        local_config = vertools.context.Scope.from_config(args.local_config)
+        context.append_local(local_config)
+    cl_config = vertools.context.Scope.from_cli(args)
+    context.append_local(cl_config)
     # Call the associated command
-    args.func(base_context, **vars(args))
+    args['func'](context)
 
 
 if __name__ == '__main__':

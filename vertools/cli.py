@@ -1,11 +1,19 @@
 import argparse
 
 import commands
+import engfmt
 
 # Main parser
 vertools = argparse.ArgumentParser(
     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     description='High level simulation tool for digital circuit verification'
+)
+vertools.add_argument(
+    '--config', '-c',
+    help='configuration file',
+    metavar='FILE',
+    dest='local_config',
+    default=None
 )
 subparsers = vertools.add_subparsers(
     required=True,
@@ -17,7 +25,7 @@ subparsers = vertools.add_subparsers(
 # Simulate
 simulate = subparsers.add_parser(
     'simulate',
-    help='run simulation'
+    help='run simulation',
 )
 simulate.add_argument(
     'script',
@@ -52,12 +60,19 @@ generate_inputs.add_argument(
     metavar='FILENAME',
     dest='input'
 )
+generate_inputs.add_argument(
+    '-t', '--time',
+    nargs=3,
+    help='time information. In order, tstart, tend and tstep',
+    type=engfmt.Quantity
+)
 subparsers = generate_inputs.add_subparsers(
     title='waveform',
     description='input waveform',
     dest='waveform',
     required=True
 )
+# Constant
 parser = subparsers.add_parser(
     'constant',
     help='constant signal'
@@ -67,6 +82,7 @@ parser.add_argument(
     help='constant value',
     type=int
 )
+# Sine
 parser = subparsers.add_parser(
     'sine',
     help='sine wave'
@@ -79,7 +95,7 @@ parser.add_argument(
 parser.add_argument(
     'frequency',
     help='sine wave frequency',
-    type=float
+    type=engfmt.Quantity
 )
 parser.add_argument(
     'phase',

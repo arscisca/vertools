@@ -21,21 +21,50 @@ def time_array(tstart, tend, step):
     return time
 
 
-def generate(waveform, time, **kwargs):
+def generate(context):
     """Generate the requested waveform
     Args:
-        waveform (str): waveform name
-        time (numpy.ndarray): time array
-        **kwargs: waveform-specific parameters
+        context (vertools.context.Context): context variable
     Returns:
         numpy.ndarray
     """
+    waveform = context.get('CommandLine', 'waveform')
+    tstart = context.get('Input', 'tstart')
+    tend = context.get('Input', 'tend')
+    tstep = context.get('Input', 'tstep')
+    time = time_array(tstart, tend, tstep)
     if waveform == 'constant':
-        return constant(time, kwargs['value'])
-    elif waveform == 'sine':
-        return sine(time, kwargs['amplitude'], kwargs['frequency'], kwargs['phase'])
+        return constant(time, context.get('CommandLine', 'value'))
     elif waveform == 'step':
-        return step(time, kwargs['t0'], kwargs['y0'], kwargs['y1'])
+        return step(time, context.get('CommandLine', 't0'), context.get('CommandLine', 'y0'),
+                    context.get('CommandLine', 'y1'))
+    elif waveform == 'sine':
+        return sine(time, context.get('CommandLine', 'amplitude'), context.get('CommandLine', 'frequency'),
+                    context.get('CommandLine', 'phase'))
+
+def constant(time, value):
+    """Constant function
+    Args:
+        time (numpy.ndarray): time array
+        value (int): constant value
+    Returns:
+        numpy.ndarray
+    """
+    return np.full_like(time, value)
+
+
+def step(time, t0, y0, y1):
+    """Step function
+    Args:
+        time (numpy.ndarray): time array
+        t0 (float): time instant of the step
+        y0 (int): initial value of the step
+        y1 (int): final value of the step
+    Returns:
+        numpy.ndarray
+    """
+    return np.array([y0 if t < t0 else y1 for t in time])
+
 
 def sine(time, amplitude, frequency, phase):
     """Sine wave
@@ -48,11 +77,3 @@ def sine(time, amplitude, frequency, phase):
         numpy.ndarray
     """
     return amplitude * np.sin(2 * np.pi * frequency * time + phase)
-
-
-def step(time, t0, y0, y1):
-    return np.array([y0 if t < t0 else y1 for t in time])
-
-
-def constant(time, value):
-    return np.full_like(time, value)
