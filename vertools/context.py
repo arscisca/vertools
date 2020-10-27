@@ -68,13 +68,11 @@ class Scope:
         # Filter away the None
         raise NotImplementedError()
 
-    def get(self, section, parameter, *args, **kwargs):
+    def get(self, section, parameter):
         """Get a parameter's value
         Args:
             section (str): section name
             parameter (str): parameter name
-            *args: arbitrary positional arguments
-            **kwargs: arbitrary keyword arguments
         Returns:
             Scope
         """
@@ -86,14 +84,17 @@ class Scope:
         else:
             raise Scope.NoSectionError("Section not Found")
 
-    def has_section(self, section):
-        """Check if scope contains the requested section
+    def set(self, section, parameter, value):
+        """Set or overwrite a parameter's value
         Args:
             section (str): section name
-        Returns:
-            bool
+            parameter (str): parameter name
+            value (any): parameter value
         """
-        return self.data.has_section(section)
+        if section in self:
+            self.data[section][parameter] = value
+        else:
+            self.data[section] = {parameter: value}
 
     def __contains__(self, section):
         return section in self.data
@@ -156,11 +157,17 @@ class Context:
         self.place_between(scope, self.most_global(), self._tail)
 
     def most_local(self):
-        """Get the most local scope in the chain"""
+        """Get the most local scope in the chain
+        Returns:
+            Scope
+        """
         return self._head.lower
 
     def most_global(self):
-        """Get the most global scope in the chain"""
+        """Get the most global scope in the chain
+        Returns:
+            Scope
+        """
         return self._tail.upper
 
     def get(self, section, parameter, *args, **kwargs):
@@ -186,6 +193,15 @@ class Context:
             return self._get(scope.lower, section, parameter)
         else:
             raise Context.LookupError(f"Context cannot find parameter {parameter} of section {section} under any scope")
+
+    def set(self, section, parameter, value):
+        """Set or overwrite a parameter in the most local scope
+        Args:
+            section (str): section name
+            parameter (str): parameter name
+            value (any): parameter value
+        """
+        self.most_local().set(section, parameter, value)
 
     def __str__(self):
         s = ''
