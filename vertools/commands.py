@@ -1,6 +1,7 @@
 import os
 import string
 import numpy as np
+import engfmt
 
 import vertools.output as output
 import vertools.system as system
@@ -82,8 +83,9 @@ class SimulateCommand(CommandAPI):
 
     def run(self):
         duration = self.context.get('Simulation', 'tend') - self.context.get('Simulation', 'tstart')
+        duration = engfmt.Quantity(duration, 's')
         command = string.Template(self.context.get('Simulation', 'command'))
-        command.substitute(duration=duration.to_eng())
+        command = command.substitute(duration=duration.to_eng())
         command = self.data.get('command', '') + command
         if self.context.get('Simulation', 'disable_log') is True:
             system.run_bash(command, stdout=False, stderror=False)
