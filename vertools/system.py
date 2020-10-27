@@ -44,5 +44,21 @@ def run_bash(command, **kwargs):
     """
     stdout = kwargs.get('stdout', None)
     stderr = kwargs.get('stderr', None)
+    if stdout is False:
+        stdout = subprocess.DEVNULL
+    if stderr is False:
+        stderr = subprocess.DEVNULL
     status = subprocess.run(command, shell=True, stdout=stdout, stderr=stderr)
     return status
+
+
+def launch_script(script, **kwargs):
+    """Launch a script
+    Args:
+        script (str): script path
+        **kwargs: arbitrary keyword arguments
+    Returns:
+        subprocess.CompletedProcess
+    """
+    #TODO Specific implementation for scripts instead of running a generic command
+    return run_bash(script, **kwargs)

@@ -3,6 +3,44 @@ import argparse
 import commands
 import engfmt
 
+
+class Contextualize(argparse.Action):
+    SECTIONS = {}
+
+    def __init__(self,
+                 option_strings,
+                 dest,
+                 section='CommandLine',
+                 parameters=None,
+                 nargs=None,
+                 const=None,
+                 default=None,
+                 type=None,
+                 choices=None,
+                 required=False,
+                 help=None,
+                 metavar=None):
+        super(Contextualize, self).__init__(option_strings, dest, nargs, const, default, type, choices, required, help,
+                                            metavar)
+        self.section = section
+        if parameters is not None:
+            self.parameters = parameters
+        else:
+            self.parameters = self.dest
+        if self.section not in self.SECTIONS:
+            self.SECTIONS[section] = {}
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        # Normally set the attribute
+        setattr(namespace, self.dest, values)
+        # Update dictionary
+        if isinstance(self.parameters, list):
+            for parameter, value in zip(self.parameters, values):
+                self.SECTIONS[self.section][parameter] = value
+        else:
+            self.SECTIONS[self.section][self.parameters] = values
+
+
 # Main parser
 vertools = argparse.ArgumentParser(
     formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -28,9 +66,13 @@ simulate = subparsers.add_parser(
     help='run simulation',
 )
 simulate.add_argument(
-    'script',
-    help='simulation script'
+    '-s', '--script',
+    help='simulation script',
+    action=Contextualize,
+    section='Simulation',
+    parameters='script'
 )
+
 simulate.add_argument(
     '--config', '-c',
     help='configuration file',
@@ -41,14 +83,18 @@ me.add_argument(
     '--no-log',
     help='disable logging',
     dest='log',
-    action='store_false'
+    action=Contextualize,
+    section='Simulation',
+    parameters='disable_log'
 )
 me.add_argument(
-    '--simlog',
+    '--log',
     help='specify logging file name',
-    default='simlog.txt'
+    action=Contextualize,
+    section='Simulation',
+    parameters='log'
 )
-
+simulate.set_defaults(func=commands.simulate)
 # Input generation
 generate_inputs = subparsers.add_parser(
     'generate-inputs',
@@ -58,13 +104,18 @@ generate_inputs.add_argument(
     '-f', '--filename',
     help='file name to store inputs',
     metavar='FILENAME',
-    dest='input'
+    dest='file',
+    action=Contextualize,
+    section='Input'
 )
 generate_inputs.add_argument(
     '-t', '--time',
     nargs=3,
+    type=engfmt.Quantity,
     help='time information. In order, tstart, tend and tstep',
-    type=engfmt.Quantity
+    section='Input',
+    parameters=['tstart', 'tend', 'tstep'],
+    action=Contextualize
 )
 subparsers = generate_inputs.add_subparsers(
     title='waveform',
@@ -80,7 +131,9 @@ parser = subparsers.add_parser(
 parser.add_argument(
     'value',
     help='constant value',
-    type=int
+    section='CommandLine',
+    type=int,
+    action=Contextualize,
 )
 # Sine
 parser = subparsers.add_parser(
@@ -91,16 +144,19 @@ parser.add_argument(
     'amplitude',
     help='sine wave amplitude',
     type=int,
+    action=Contextualize,
 )
 parser.add_argument(
     'frequency',
     help='sine wave frequency',
-    type=engfmt.Quantity
+    type=engfmt.Quantity,
+    action=Contextualize,
 )
 parser.add_argument(
     'phase',
     help='sine wave phase (in radians)',
-    type=float
+    type=float,
+    action=Contextualize,
 )
 generate_inputs.set_defaults(
     func=commands.generate_inputs

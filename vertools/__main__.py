@@ -14,10 +14,10 @@ def main():
     if args.local_config is not None:
         local_config = vertools.context.Scope.from_config(args.local_config)
         context.append_local(local_config)
-    cl_config = vertools.context.Scope.from_cli(args)
+    cl_config = vertools.context.Scope(vertools.cli.Contextualize.SECTIONS)
     context.append_local(cl_config)
     # Call the associated command
-    args['func'](context)
+    args.func(args, context)
 
 
 if __name__ == '__main__':

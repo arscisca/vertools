@@ -9,7 +9,7 @@ converters = {
         'tstep': engfmt.Quantity
     },
     'Simulation': {
-        'log': lambda s: True if s.lower() == 'true' else False,
+        'disable_log': lambda s: True if s.lower() == 'true' else False,
         'tstart': engfmt.Quantity,
         'tend': engfmt.Quantity,
         'tstep': engfmt.Quantity

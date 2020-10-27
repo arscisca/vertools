@@ -57,6 +57,15 @@ def print_message(message, style, indentation, title='', title_style=None):
     print(output)
 
 
+def update(message, indentation=0):
+    """Print a simple unformatted update
+        Args:
+            message (str): error message
+            indentation (int): output indentation level
+    """
+    print_message(message, [], indentation)
+
+
 def error(message, indentation=0):
     """Print an error message
     Args:
