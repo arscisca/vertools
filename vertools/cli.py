@@ -74,12 +74,6 @@ simulate.add_argument(
     section='Simulation',
     parameters='script'
 )
-
-simulate.add_argument(
-    '--config', '-c',
-    help='configuration file',
-    default='vertools.config'
-)
 me = simulate.add_mutually_exclusive_group()
 me.add_argument(
     '--no-log',
@@ -98,6 +92,68 @@ me.add_argument(
     parameters='log'
 )
 simulate.set_defaults(func=commands.simulate)
+
+# Reference
+reference = subparsers.add_parser(
+    'reference',
+    help='run reference executable'
+)
+reference.add_argument(
+    '-e', '--executable',
+    help='reference executable',
+    action=Contextualize,
+    section='Reference',
+    parameters='executable'
+)
+me = reference.add_mutually_exclusive_group()
+me.add_argument(
+    '--no-log',
+    help='disable logging',
+    dest='log',
+    nargs=0,
+    action=Contextualize,
+    section='Reference',
+    parameters='disable_log'
+)
+me.add_argument(
+    '--log',
+    help='specify logging file name',
+    action=Contextualize,
+    section='Reference',
+    parameters='log'
+)
+reference.set_defaults(
+    func=commands.simulate
+)
+
+# Compare
+compare = subparsers.add_parser(
+    'compare',
+    help='compare simulation and reference results'
+)
+compare.add_argument(
+    '-s', '--simulation',
+    help='simulation results file',
+    action=Contextualize,
+    section='Simulation',
+    parameters='results'
+)
+compare.add_argument(
+    '-r', '--reference',
+    help='reference results file',
+    action=Contextualize,
+    section='Reference',
+    parameters='results'
+)
+compare.add_argument(
+    '-t', '--threshold',
+    help='comparison threshold',
+    action=Contextualize,
+    section='Verification'
+)
+compare.set_defaults(
+    func=commands.compare_results
+)
 # Input generation
 generate_inputs = subparsers.add_parser(
     'generate-inputs',
