@@ -52,7 +52,7 @@ def run_bash(command, **kwargs):
     return status
 
 
-def launch_script(script, **kwargs):
+def launch(script, **kwargs):
     """Launch a script
     Args:
         script (str): script path

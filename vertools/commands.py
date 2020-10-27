@@ -1,81 +1,98 @@
 import os
+import string
 import numpy as np
 
-import output
-import system
-import waveforms
+import vertools.output as output
+import vertools.system as system
+import vertools.waveforms as waveforms
 
 
-def clean(args, context):
-    """Remove validation files
-    Args:
-        args (argparse.NameSpace): namespace from command line parsing
-        context (vertools.Context): context
-    """
-    # Files to be removed
-    targets = {
-        'Simulation': ['results', 'log']
-    }
-    output.status('Cleaning files')
-    for section, files in targets.items():
-        for file in files:
-            fname = context.get(section, file)
-            try:
-                os.remove(fname)
-                output.update(f"Removed {fname}", 2)
-            except OSError:
-                # Ignore missing files
-                pass
-    output.success("Done")
+class CommandAPI:
+    def __init__(self, args, context, verbose=True):
+        self.args = args
+        self.context = context
+        self.verbose = verbose
+        self.data = {}
+
+    def setup(self):
+        """Initialize context, environment and variables"""
+        pass
+
+    def run(self):
+        """Run core actions"""
+        pass
+
+    def exit(self):
+        """Post execution actions"""
+        pass
+
+    def output(self, output_func=output.update, *args, **kwargs):
+        """Generate an output through a generic function only if command is set to verbose
+        Args:
+            output_func (function): output function (usually print or output.update)
+            *args: output_func arguments
+            **kwargs: output_func keyword arguments
+        """
+        if self.verbose is True:
+            output_func(*args, **kwargs)
+
+    def __call__(self):
+        self.setup()
+        self.run()
+        self.exit()
 
 
-def generate_inputs(args, context):
-    """Generate input file
-    Args:
-        args (argparse.NameSpace): namespace from command line parsing
-        context (vertools.Context): context
-    """
-    context.set('CommandLine', 'waveform', args.waveform)
-    signal = waveforms.generate(context)
-    fname = context.get('Input', 'file', fallback='inputs.txt')
-    np.savetxt(fname, signal, fmt='%d')
-    output.success(f"Inputs saved on file {fname}")
+class CleanCommand(CommandAPI):
+    def setup(self):
+        self.data['targets'] = {
+            'Simulation': ['results', 'log'],
+            'Reference': ['results', 'log']
+        }
+
+    def run(self):
+        self.output(output.status, 'Cleaning files')
+        for section, parameters in self.data['targets'].items():
+            for parameter in self.data['targets'][section]:
+                fname = self.context.get(section, parameter)
+                try:
+                    os.remove(fname)
+                except OSError:
+                    pass
+                self.output(output.update, f"Removed {fname}", 2)
+            self.output(output.success('Done'))
 
 
-def simulate(args, context):
-    """Run simulation script
-    Args:
-        args (argparse.NameSpace): namespace from command line parsing
-        context (vertools.Context): context
-    """
-    script = context.get('Simulation', 'script')
-    output.status(f"Launching simulation script ({script})")
-    if context.get('Simulation', 'disable_log') is True:
-        system.launch_script(script, stdout=False, stderr=False)
-    else:
-        logfile = context.get('Simulation', 'log')
-        with open(logfile, 'w') as log:
-            system.launch_script(script, stdout=log, stderr=log)
-        output.update(f"Simulation log saved in {logfile}", 2)
-    output.success('Done')
+class GenerateInputsCommand(CommandAPI):
+    def setup(self):
+        self.context.set('CommandLine', 'waveform', self.args.waveform)
+
+    def run(self):
+        signal = waveforms.generate(self.context)
+        fname = self.context.get('Input', 'file')
+        np.savetxt(fname, signal, fmt='%d')
+        self.output(output.success, f"Saved {len(signal)} samples on file {fname}")
 
 
-def reference(args, context):
-    """Run reference
-    Args:
-        args (argparse.NameSpace): namespace from command line parsing
-        context (vertools.Context): context
-    """
-    script = context.get('Reference', 'script')
-    output.status("Launching reference script")
-    if context.get('Reference', 'disable_log') is True:
-        system.launch_script(script, stdout=False, stderr=False)
-    else:
-        logfile = context.get('Reference')
-        with open(logfile, 'w') as log:
-            system.launch_script(script, stdout=log, stderr=log)
-        output.update(f"Reference log saved in {logfile}", 2)
-    output.success('Done')
+class SimulateCommand(CommandAPI):
+    def setup(self):
+        setup_command = self.context.get('Simulation', 'setup')
+        self.data['command'] = f"{setup_command} && "
+        # Remove work folder
+        system.run_bash('rm -rf work/')
+
+    def run(self):
+        duration = self.context.get('Simulation', 'tend') - self.context.get('Simulation', 'tstart')
+        command = string.Template(self.context.get('Simulation', 'command'))
+        command.substitute(duration=duration.to_eng())
+        command = self.data.get('command', '') + command
+        if self.context.get('Simulation', 'disable_log') is True:
+            system.run_bash(command, stdout=False, stderror=False)
+        else:
+            logfile = self.context.get('Simulation', 'log')
+            with open(logfile, 'w') as log:
+                system.run_bash(command, stdout=log, stderr=log)
+            self.output(output.update, f"Simulation log saved in {logfile}", 2)
+        self.output(output.success, 'Done')
 
 
 def compare_results(args, context):
@@ -111,6 +128,25 @@ def compare_results(args, context):
     for line, (sim, ref) in enumerate(zip(simresults, refresults)):
         if abs(sim - ref) > threshold:
             output.error(f"Results mismatch on line {line}: reference={ref}, simulation={sim}", 2)
+
+
+
+def reference(args, context):
+    """Run reference
+    Args:
+        args (argparse.NameSpace): namespace from command line parsing
+        context (vertools.Context): context
+    """
+    executable = context.get('Reference', 'command')
+    output.status("Launching reference executable")
+    if context.get('Reference', 'disable_log') is True:
+        system.launch(executable, stdout=False, stderr=False)
+    else:
+        logfile = context.get('Reference')
+        with open(logfile, 'w') as log:
+            system.launch(executable, stdout=log, stderr=log)
+        output.update(f"Reference log saved in {logfile}", 2)
+    output.success('Done')
 
 
 def validate(args, context):

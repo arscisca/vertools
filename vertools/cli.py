@@ -1,6 +1,6 @@
 import argparse
 
-import commands
+import vertools.commands as commands
 import engfmt
 
 
@@ -49,7 +49,7 @@ vertools = argparse.ArgumentParser(
     description='High level simulation tool for digital circuit verification'
 )
 vertools.add_argument(
-    '--config', '-c',
+    '--config',
     help='configuration file',
     metavar='FILE',
     dest='local_config',
@@ -67,11 +67,11 @@ simulate = subparsers.add_parser(
     help='run simulation',
 )
 simulate.add_argument(
-    '-s', '--script',
+    '-c', '--command',
     help='simulation script',
     action=Contextualize,
     section='Simulation',
-    parameters='script'
+    parameters='command'
 )
 me = simulate.add_mutually_exclusive_group()
 me.add_argument(
@@ -90,7 +90,7 @@ me.add_argument(
     section='Simulation',
     parameters='log'
 )
-simulate.set_defaults(func=commands.simulate)
+simulate.set_defaults(func=commands.SimulateCommand)
 
 # Reference
 reference = subparsers.add_parser(
@@ -98,11 +98,11 @@ reference = subparsers.add_parser(
     help='run reference executable'
 )
 reference.add_argument(
-    '-e', '--executable',
-    help='reference executable',
+    '-c', '--command',
+    help='reference command',
     action=Contextualize,
     section='Reference',
-    parameters='executable'
+    parameters='command'
 )
 me = reference.add_mutually_exclusive_group()
 me.add_argument(
@@ -122,7 +122,7 @@ me.add_argument(
     parameters='log'
 )
 reference.set_defaults(
-    func=commands.simulate
+    func=None
 )
 
 # Compare
@@ -151,7 +151,7 @@ compare.add_argument(
     section='Verification'
 )
 compare.set_defaults(
-    func=commands.compare_results
+    func=None
 )
 # Input generation
 generate_inputs = subparsers.add_parser(
@@ -216,7 +216,7 @@ parser.add_argument(
     action=Contextualize,
 )
 generate_inputs.set_defaults(
-    func=commands.generate_inputs
+    func=commands.GenerateInputsCommand
 )
 
 
