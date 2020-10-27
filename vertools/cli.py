@@ -56,7 +56,6 @@ vertools.add_argument(
     default=None
 )
 subparsers = vertools.add_subparsers(
-    required=True,
     title='command',
     description='vertools command'
 )
@@ -179,8 +178,7 @@ generate_inputs.add_argument(
 subparsers = generate_inputs.add_subparsers(
     title='waveform',
     description='input waveform',
-    dest='waveform',
-    required=True
+    dest='waveform'
 )
 # Constant
 parser = subparsers.add_parser(
