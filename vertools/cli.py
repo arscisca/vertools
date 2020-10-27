@@ -31,8 +31,9 @@ class Contextualize(argparse.Action):
             self.SECTIONS[section] = {}
 
     def __call__(self, parser, namespace, values, option_string=None):
-        if len(values) == 0:
-            values = True
+        if isinstance(values, list):
+            if len(values) == 0:
+                values = True
         # Normally set the attribute
         setattr(namespace, self.dest, values)
         # Update dictionary

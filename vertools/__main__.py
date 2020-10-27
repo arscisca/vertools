@@ -17,7 +17,7 @@ def main():
     cl_config = vertools.context.Scope(vertools.cli.Contextualize.SECTIONS)
     context.append_local(cl_config)
     # Call the associated command
-    args.func(args, context)
+    args.func(args, context)()
 
 
 if __name__ == '__main__':
