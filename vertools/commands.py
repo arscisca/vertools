@@ -83,6 +83,7 @@ class SimulateCommand(CommandAPI):
         system.run_bash('rm -rf work/')
 
     def run(self):
+        self.output(output.status, "Running simulation")
         duration = self.context.get('Simulation', 'tend') - self.context.get('Simulation', 'tstart')
         duration = engfmt.Quantity(duration, 's')
         command = string.Template(self.context.get('Simulation', 'command'))
@@ -101,6 +102,7 @@ class SimulateCommand(CommandAPI):
 class CompareCommand(CommandAPI):
     def run(self):
         """Compare simulation and reference results"""
+        self.output(output.status, "Comparing results")
         simresults_name = self.context.get('Simulation', 'results')
         refresults_name = self.context.get('Reference', 'results')
         simresults = None
@@ -122,6 +124,7 @@ class CompareCommand(CommandAPI):
         if sim_length != ref_length:
             output.error(f"File length mismatch: {simresults_name} has {sim_length} lines; "
                          f"{refresults_name} has {ref_length} lines.", 2)
+            exit(2)
         # Compare files line by line
         threshold = self.context.get('Verification', 'threshold')
         simresults.seek(0)
@@ -130,7 +133,8 @@ class CompareCommand(CommandAPI):
             sim = int(sim)
             ref = int(ref)
             if abs(sim - ref) > threshold:
-                self.output(output.error, f"Results mismatch on line {line+1}: reference={ref}, simulation={sim}")
+                self.output(output.error, f"Results mismatch on line {line+1}: reference={ref}, simulation={sim}", 2)
+                exit(3)
         self.output(output.success, "All results are matching")
 
 
