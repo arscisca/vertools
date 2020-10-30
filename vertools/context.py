@@ -49,7 +49,7 @@ class Scope:
             Scope
         """
         data = {}
-        config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation)
+        config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
         config.read(filename)
         for section in config:
             data[section] = {}
