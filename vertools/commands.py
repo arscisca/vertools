@@ -141,7 +141,7 @@ class ReferenceCommand(CommandAPI):
         if self.context.get('Reference', 'disable_log') is True:
             system.run_bash(command, stdout=False, stderr=False)
         else:
-            logfile = self.context.get('Reference')
+            logfile = self.context.get('Reference', 'log')
             with open(logfile, 'w') as log:
                 system.run_bash(command, stdout=log, stderr=log)
             self.output(output.update, f"Reference log saved in {logfile}", 2)
