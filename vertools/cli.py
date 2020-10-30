@@ -219,6 +219,44 @@ parser.add_argument(
 generate_inputs.set_defaults(
     func=commands.GenerateInputsCommand
 )
+# Chirp
+parser = subparsers.add_parser(
+    'chirp',
+    help='chirp signal'
+)
+parser.add_argument(
+    'amplitude',
+    help='chirp signal amplitude',
+    type=int,
+    action=Contextualize
+)
+parser.add_argument(
+    'duration',
+    help='chirp signal duration',
+    type=engfmt.Quantity,
+    action=Contextualize
+)
+parser.add_argument(
+    'f0',
+    help='initial frequency',
+    type=engfmt.Quantity,
+    action=Contextualize
+)
+parser.add_argument(
+    'f1',
+    help='final frequency',
+    type=engfmt.Quantity,
+    action=Contextualize
+),
+parser.add_argument(
+    '--method',
+    help='chirp generation option',
+    choices=['linear', 'quadratic', 'logarithmic', 'hyperbolic'],
+    default='linear',
+    action=Contextualize,
+    section='CommandLine',
+    parameters='method'
+)
 
 
 def parse(args=None):

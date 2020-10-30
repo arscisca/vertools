@@ -1,5 +1,6 @@
 import numpy as np
 import scipy as sp
+import scipy.signal
 
 
 def time_array(tstart, tend, step):
@@ -41,6 +42,11 @@ def generate(context):
     elif waveform == 'sine':
         return sine(time, context.get('CommandLine', 'amplitude'), context.get('CommandLine', 'frequency'),
                     context.get('CommandLine', 'phase'))
+    elif waveform == 'chirp':
+        return chirp(time, context.get('CommandLine', 'amplitude'), context.get('CommandLine', 'duration'),
+                     context.get('CommandLine', 'f0'), context.get('CommandLine', 'f1'),
+                     context.get('CommandLine', 'method', fallback='linear'))
+
 
 def constant(time, value):
     """Constant function
@@ -71,9 +77,24 @@ def sine(time, amplitude, frequency, phase):
     Args:
         time (numpy.ndarray): time array
         amplitude (int): sine wave amplitude
-        frequency (float): sine wave frequency\
+        frequency (float): sine wave frequency
         phase (float): sine wave float (in radians)
     Returns:
         numpy.ndarray
     """
     return amplitude * np.sin(2 * np.pi * frequency * time + phase)
+
+
+def chirp(time, amplitude, duration, f0, f1, method):
+    """Chirp signal
+    Args:
+        time (numpy.ndarray): time array
+        amplitude (int): signal amplitude
+        duration (float): chirp duration
+        f0 (float): initial frequency
+        f1 (float): final frequency
+        method (str): chirp method
+    Returns:
+        numpy.ndarray
+    """
+    return amplitude * sp.signal.chirp(time, f0, duration, f1, method)

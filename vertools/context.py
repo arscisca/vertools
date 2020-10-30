@@ -1,7 +1,6 @@
 import configparser
 import engfmt
 
-
 converters = {
     'Input': {
         'tstart': engfmt.Quantity,
@@ -30,6 +29,7 @@ class Scope:
         upper (Scope): more local scope
         lower (Scope): more global scope
     """
+
     def __init__(self, data=None):
         """Initialize scope
         Args:
@@ -68,11 +68,12 @@ class Scope:
         # Filter away the None
         raise NotImplementedError()
 
-    def get(self, section, parameter):
+    def get(self, section, parameter, fallback=None):
         """Get a parameter's value
         Args:
             section (str): section name
             parameter (str): parameter name
+            fallback (any): fallback value if parameter is not in the list
         Returns:
             Scope
         """
@@ -118,6 +119,7 @@ class Context:
         _head (Scope): service internal scope
         _tail (Scope): service internal scope
     """
+
     def __init__(self):
         """Initialize context"""
         # Generate empty guard scopes
@@ -170,29 +172,35 @@ class Context:
         """
         return self._tail.upper
 
-    def get(self, section, parameter, *args, **kwargs):
+    def get(self, section, parameter, fallback=None):
         """Get the value of a parameter
         Args:
             section (str): section name
             parameter (str): parameter name
             *args: arbitrary positional arguments
-            **kwargs: arbitrary keyword arguments
+            fallback (any): fallback value if parameter is not found
         Returns:
             Any
         Raises:
             Context.LookupError: when a section or parameter is not found in any scope
         """
-        return self._get(self.most_local(), section, parameter, *args, **kwargs)
+        return self._get(self.most_local(), section, parameter, fallback)
 
-    def _get(self, scope, section, parameter, *args, **kwargs):
+    def _get(self, scope, section, parameter, fallback):
         """Recursive version for the Context.get method"""
         if section in scope:
             if parameter in scope[section]:
-                return scope.get(section, parameter, *args, **kwargs)
+                return scope.get(section, parameter)
+        # Try to look in lower scope
         if scope.lower is not self._tail:
-            return self._get(scope.lower, section, parameter)
+            return self._get(scope.lower, section, parameter, fallback)
         else:
-            raise Context.LookupError(f"Context cannot find parameter {parameter} of section {section} under any scope")
+            # Reached tail
+            if fallback is not None:
+                return fallback
+            else:
+                raise Context.LookupError(
+                    f"Context cannot find parameter {parameter} of section {section} under any scope")
 
     def set(self, section, parameter, value):
         """Set or overwrite a parameter in the most local scope
@@ -209,7 +217,7 @@ class Context:
         current_node = self.most_local()
         while current_node != self._tail:
             s += f"Scope {i}: {str(current_node)}\n"
-            i+=1
+            i += 1
             current_node = current_node.lower
         return s
 
