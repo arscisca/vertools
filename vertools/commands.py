@@ -115,6 +115,7 @@ class CompareCommand(CommandAPI):
         except OSError:
             self.output(output.error, f"Could not open file {refresults_name}")
             exit(1)
+        self.output(output.update, f"Comparing files `{simresults_name}` and `{refresults_name}`...")
         # Check file lengths
         sim_length = sum(1 for line in simresults)
         ref_length = sum(1 for line in refresults)
@@ -122,12 +123,15 @@ class CompareCommand(CommandAPI):
             output.error(f"File length mismatch: {simresults_name} has {sim_length} lines; "
                          f"{refresults_name} has {ref_length} lines.", 2)
         # Compare files line by line
-        threshold = self.context.get('Validation', 'threshold')
+        threshold = self.context.get('Verification', 'threshold')
         simresults.seek(0)
         refresults.seek(0)
         for line, (sim, ref) in enumerate(zip(simresults, refresults)):
+            sim = int(sim)
+            ref = int(ref)
             if abs(sim - ref) > threshold:
-                self.output(output.error, f"Results mismatch on line {line}: reference={ref}, simulation={sim}", 2)
+                self.output(output.error, f"Results mismatch on line {line+1}: reference={ref}, simulation={sim}")
+        self.output(output.success, "All results are matching")
 
 
 class ReferenceCommand(CommandAPI):

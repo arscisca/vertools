@@ -148,6 +148,7 @@ compare.add_argument(
 compare.add_argument(
     '-t', '--threshold',
     help='comparison threshold',
+    type=int,
     action=Contextualize,
     section='Verification'
 )

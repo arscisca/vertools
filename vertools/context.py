@@ -15,6 +15,7 @@ converters = {
     },
     'Verification': {
         'log': lambda s: True if s.lower() == 'true' else False,
+        'threshold': int,
         'tstart': engfmt.Quantity,
         'tend': engfmt.Quantity,
         'tstep': engfmt.Quantity
