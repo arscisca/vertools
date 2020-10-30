@@ -123,7 +123,7 @@ me.add_argument(
     parameters='log'
 )
 reference.set_defaults(
-    func=None
+    func=commands.ReferenceCommand
 )
 
 # Compare
@@ -152,7 +152,7 @@ compare.add_argument(
     section='Verification'
 )
 compare.set_defaults(
-    func=None
+    func=commands.CompareCommand
 )
 # Input generation
 generate_inputs = subparsers.add_parser(

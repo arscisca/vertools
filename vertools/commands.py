@@ -77,7 +77,8 @@ class GenerateInputsCommand(CommandAPI):
 class SimulateCommand(CommandAPI):
     def setup(self):
         setup_command = self.context.get('Simulation', 'setup')
-        self.data['command'] = f"{setup_command} && "
+        if setup_command != '':
+            self.data['command'] = f"{setup_command} && "
         # Remove work folder
         system.run_bash('rm -rf work/')
 
@@ -97,64 +98,55 @@ class SimulateCommand(CommandAPI):
         self.output(output.success, 'Done')
 
 
-def compare_results(args, context):
-    """Compare simulation & reference results
-    Args:
-        args (argparse.NameSpace): namespace from command line parsing
-        context (vertools.Context): context
-    """
-    simresults_name = context.get('Simulation', 'results')
-    refresults_name = context.get('Reference', 'results')
-    simresults = None
-    refresults = None
-    try:
-        simresults = open(simresults_name, 'r')
-    except OSError:
-        output.error(f"Could not open file {simresults_name}")
-        exit(1)
-    try:
-        refresults = open(refresults_name, 'r')
-    except OSError:
-        output.error(f"Could not open file {refresults_name}")
-        exit(1)
-    # Check file lengths
-    sim_length = sum(1 for line in simresults)
-    ref_length = sum(1 for line in refresults)
-    if sim_length != ref_length:
-        output.error(f"File length mismatch: {simresults_name} has {sim_length} lines; "
-                     f"{refresults_name} has {ref_length} lines.", 2)
-    # Compare files line by line
-    threshold = context.get('Validation', 'threshold')
-    simresults.seek(0)
-    refresults.seek(0)
-    for line, (sim, ref) in enumerate(zip(simresults, refresults)):
-        if abs(sim - ref) > threshold:
-            output.error(f"Results mismatch on line {line}: reference={ref}, simulation={sim}", 2)
+class CompareCommand(CommandAPI):
+    def run(self):
+        """Compare simulation and reference results"""
+        simresults_name = self.context.get('Simulation', 'results')
+        refresults_name = self.context.get('Reference', 'results')
+        simresults = None
+        refresults = None
+        try:
+            simresults = open(simresults_name, 'r')
+        except OSError:
+            self.output(output.error, f"Could not open file {simresults_name}")
+            exit(1)
+        try:
+            refresults = open(refresults_name, 'r')
+        except OSError:
+            self.output(output.error, f"Could not open file {refresults_name}")
+            exit(1)
+        # Check file lengths
+        sim_length = sum(1 for line in simresults)
+        ref_length = sum(1 for line in refresults)
+        if sim_length != ref_length:
+            output.error(f"File length mismatch: {simresults_name} has {sim_length} lines; "
+                         f"{refresults_name} has {ref_length} lines.", 2)
+        # Compare files line by line
+        threshold = self.context.get('Validation', 'threshold')
+        simresults.seek(0)
+        refresults.seek(0)
+        for line, (sim, ref) in enumerate(zip(simresults, refresults)):
+            if abs(sim - ref) > threshold:
+                self.output(output.error, f"Results mismatch on line {line}: reference={ref}, simulation={sim}", 2)
 
 
-
-def reference(args, context):
-    """Run reference
-    Args:
-        args (argparse.NameSpace): namespace from command line parsing
-        context (vertools.Context): context
-    """
-    executable = context.get('Reference', 'command')
-    output.status("Launching reference executable")
-    if context.get('Reference', 'disable_log') is True:
-        system.launch(executable, stdout=False, stderr=False)
-    else:
-        logfile = context.get('Reference')
-        with open(logfile, 'w') as log:
-            system.launch(executable, stdout=log, stderr=log)
-        output.update(f"Reference log saved in {logfile}", 2)
-    output.success('Done')
+class ReferenceCommand(CommandAPI):
+    def run(self):
+        command = self.context.get('Reference', 'command')
+        self.output(output.status, "Launching reference command")
+        if self.context.get('Reference', 'disable_log') is True:
+            system.run_bash(command, stdout=False, stderr=False)
+        else:
+            logfile = self.context.get('Reference')
+            with open(logfile, 'w') as log:
+                system.run_bash(command, stdout=log, stderr=log)
+            self.output(output.update, f"Reference log saved in {logfile}", 2)
+        self.output(output.success, 'Done')
 
 
-def validate(args, context):
-    """Run simulation and reference and then compare results
-    Args:
-        args (argparse.NameSpace): namespace from command line parsing
-        context (vertools.Context): context
-    """
-    pass
+class ValidateCommand(CommandAPI):
+    def run(self):
+        sim = SimulateCommand(self.args, self.context, self.verbose)
+        ref = SimulateCommand(self.args, self.context, self.verbose)
+        sim()
+        ref()
