@@ -156,10 +156,13 @@ compare.set_defaults(
     func=commands.CompareCommand
 )
 
-# Validate
-validate = subparsers.add_parser(
-    'validate',
+# Verify
+verify = subparsers.add_parser(
+    'verify',
     help='run the full validation suite: simulation, reference and comparison'
+)
+verify.set_defaults(
+    func=commands.VerifyCommand
 )
 
 # Input generation

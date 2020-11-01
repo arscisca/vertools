@@ -125,6 +125,7 @@ class SimulateCommand(CommandAPI):
             exit(5)
         self.output(output.success, "Done")
 
+
 class CompareCommand(CommandAPI):
     def setup(self):
         self.output(output.status, "Checking results folder")
@@ -204,7 +205,7 @@ class ReferenceCommand(CommandAPI):
         self.output(output.success, "Done")
 
 
-class ValidateCommand(CommandAPI):
+class VerifyCommand(CommandAPI):
     def run(self):
         sim = SimulateCommand(self.args, self.context, self.verbose)
         ref = ReferenceCommand(self.args, self.context, self.verbose)
