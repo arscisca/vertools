@@ -14,8 +14,18 @@ def remove_files(*files):
             pass
 
 
+def exists(path):
+    """Check if path exists
+    Args:
+        path (str): path
+    Returns:
+        bool
+    """
+    return os.path.exists(path)
+
+
 def is_file(path):
-    """Check if a fil exists
+    """Check if a file exists
     Args:
         path (str): path to the file
     Returns:
@@ -34,10 +44,10 @@ def is_executable(path):
     return is_file(path) and os.access(path, os.X_OK)
 
 
-def run_bash(command, **kwargs):
+def run_bash(commands, **kwargs):
     """Run a bash command
     Args:
-        command (str): command to be executed
+        commands (Union[str, List[str]]): command (or list of commands) to be executed in the same shell
         **kwargs: arbitrary keyword arguments
     Returns:
        subprocess.CompletedProcess
@@ -48,6 +58,10 @@ def run_bash(command, **kwargs):
         stdout = subprocess.DEVNULL
     if stderr is False:
         stderr = subprocess.DEVNULL
+    if isinstance(commands, list):
+        command = ' && '.join(commands)
+    else:
+        command = commands
     status = subprocess.run(command, shell=True, stdout=stdout, stderr=stderr)
     return status
 

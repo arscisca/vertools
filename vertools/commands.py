@@ -16,8 +16,11 @@ class CommandAPI:
         self.data = {}
 
     def setup(self):
-        """Initialize context, environment and variables"""
-        pass
+        """Initialize files, context, variables, ...
+        Returns:
+            bool: True if command needs to continue, False to abort
+        """
+        return True
 
     def run(self):
         """Run core actions"""
@@ -35,10 +38,12 @@ class CommandAPI:
             **kwargs: output_func keyword arguments
         """
         if self.verbose is True:
-            output_func(*args, **kwargs)
+            return output_func(*args, **kwargs)
 
     def __call__(self):
-        self.setup()
+        setup_status = self.setup()
+        if setup_status is False:
+            return
         self.run()
         self.exit()
 
@@ -65,30 +70,42 @@ class CleanCommand(CommandAPI):
 
 class GenerateInputsCommand(CommandAPI):
     def setup(self):
-        self.context.set('CommandLine', 'waveform', self.args.waveform)
+        fname = self.context.get('Input', 'file')
+        folder = os.path.abspath(fname)[:-len(fname)]
+        if not system.exists(folder):
+            self.output(output.error, f"Input file cannot be created: path `{folder}` does not exist")
+            exit(3)
+        if fname in os.listdir(folder):
+            confirm = self.output(output.confirm, f"File {fname} already exists. Do you want to replace it?", True)
+            if confirm is True:
+                self.output(output.update, "Removing old file...", 2)
+                system.remove_files(fname)
+            else:
+                return False
+        return True
 
     def run(self):
+        self.context.set('CommandLine', 'waveform', self.args.waveform)
         signal = waveforms.generate(self.context)
         fname = self.context.get('Input', 'file')
         np.savetxt(fname, signal, fmt='%d')
-        self.output(output.success, f"Saved {len(signal)} samples on file {fname}")
+        self.output(output.success, f"Saved {len(signal)} samples on file `{fname}`")
 
 
 class SimulateCommand(CommandAPI):
     def setup(self):
-        setup_command = self.context.get('Simulation', 'setup')
-        if setup_command != '':
-            self.data['command'] = f"{setup_command} && "
         # Remove work folder
+        self.output(output.status, "Setting up simulation")
+        self.output(output.update, "Removing work/ folder", 2)
         system.run_bash('rm -rf work/')
+        self.output(output.success, "Done")
 
     def run(self):
         self.output(output.status, "Running simulation")
-        duration = self.context.get('Simulation', 'tend') - self.context.get('Simulation', 'tstart')
-        duration = engfmt.Quantity(duration, 's')
-        command = string.Template(self.context.get('Simulation', 'command'))
-        command = command.substitute(duration=duration.to_eng())
-        command = self.data.get('command', '') + command
+        setup_command = self.context.get('Simulation', 'setup', '')
+        simul_command = self.context.get('Simulation', 'command')
+        command = [command for command in (setup_command, simul_command) if command != '']
+        self.output(output.update, "Launching simulation command", 2)
         if self.context.get('Simulation', 'disable_log') is True:
             system.run_bash(command, stdout=False, stderror=False)
         else:
@@ -100,6 +117,17 @@ class SimulateCommand(CommandAPI):
 
 
 class CompareCommand(CommandAPI):
+    def setup(self):
+        self.output(output.status, "Checking results folder")
+        simresults_name = self.context.get('Simulation', 'results')
+        refresults_name = self.context.get('Reference', 'results')
+        for file in simresults_name, refresults_name:
+            if not system.exists(file):
+                self.output(output.error, f"File {file} does not exist. Cannot compare results")
+                exit(4)
+        self.output(output.update, "All files are present")
+        return True
+
     def run(self):
         """Compare simulation and reference results"""
         self.output(output.status, "Comparing results")
@@ -110,14 +138,14 @@ class CompareCommand(CommandAPI):
         try:
             simresults = open(simresults_name, 'r')
         except OSError:
-            self.output(output.error, f"Could not open file {simresults_name}")
+            self.output(output.error, f"Could not open file {simresults_name}", 2)
             exit(1)
         try:
             refresults = open(refresults_name, 'r')
         except OSError:
-            self.output(output.error, f"Could not open file {refresults_name}")
+            self.output(output.error, f"Could not open file {refresults_name}", 2)
             exit(1)
-        self.output(output.update, f"Comparing files `{simresults_name}` and `{refresults_name}`...")
+        self.output(output.update, f"Comparing `{simresults_name}` and `{refresults_name}`", 2)
         # Check file lengths
         sim_length = sum(1 for line in simresults)
         ref_length = sum(1 for line in refresults)
@@ -155,6 +183,8 @@ class ReferenceCommand(CommandAPI):
 class ValidateCommand(CommandAPI):
     def run(self):
         sim = SimulateCommand(self.args, self.context, self.verbose)
-        ref = SimulateCommand(self.args, self.context, self.verbose)
+        ref = ReferenceCommand(self.args, self.context, self.verbose)
+        com = CompareCommand(self.args, self.context, self.verbose)
         sim()
         ref()
+        com()

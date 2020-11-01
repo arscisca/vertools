@@ -155,6 +155,13 @@ compare.add_argument(
 compare.set_defaults(
     func=commands.CompareCommand
 )
+
+# Validate
+validate = subparsers.add_parser(
+    'validate',
+    help='run the full validation suite: simulation, reference and comparison'
+)
+
 # Input generation
 generate_inputs = subparsers.add_parser(
     'generate-inputs',
