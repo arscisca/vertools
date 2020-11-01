@@ -11,7 +11,8 @@ converters = {
         'disable_log': lambda s: True if s.lower() == 'true' else False,
         'tstart': engfmt.Quantity,
         'tend': engfmt.Quantity,
-        'tstep': engfmt.Quantity
+        'tstep': engfmt.Quantity,
+        'clock': engfmt.Quantity
     },
     'Verification': {
         'log': lambda s: True if s.lower() == 'true' else False,

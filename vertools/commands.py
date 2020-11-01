@@ -93,9 +93,29 @@ class GenerateInputsCommand(CommandAPI):
 
 
 class SimulateCommand(CommandAPI):
+    def setclock(self):
+        clock = self.context.get('Simulation', 'clock')
+        clockgen = self.context.get('Simulation', 'clock_gen')
+        if not system.exists(clockgen):
+            self.output(output.error, f"Clock generator {clockgen} does not exist")
+            exit(7)
+        # Clockgen is a small file, store it in memory
+        with open(clockgen, 'r') as f:
+            lines = f.readlines()
+        # Overwrite
+        with open(clockgen, 'w') as f:
+            for line in lines:
+                if 'Ts' not in line:
+                    f.write(line)
+                else:
+                    pos = line.find(':=')
+                    f.write(line[:pos + len(':=')] + f" {clock};\n")
+
     def setup(self):
         # Remove work folder
         self.output(output.status, "Setting up simulation")
+        self.output(output.update, "Setting clock", 2)
+        self.setclock()
         self.output(output.update, "Removing work/ folder", 2)
         system.run_bash('rm -rf work/')
         self.output(output.update, "Removing old simulation results", 2)
