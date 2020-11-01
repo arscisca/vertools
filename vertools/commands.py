@@ -135,7 +135,7 @@ class CompareCommand(CommandAPI):
             if not system.exists(file):
                 self.output(output.error, f"File {file} does not exist. Cannot compare results")
                 exit(4)
-        self.output(output.update, "All files are present")
+        self.output(output.success, "All files are present", 2)
         return True
 
     def run(self):
@@ -181,7 +181,6 @@ class ReferenceCommand(CommandAPI):
         self.output(output.status, "Setting up reference")
         self.output(output.update, "Removing old reference results", 2)
         system.remove_files(self.context.get('Reference', 'results'))
-        self.output(output.success, "Done")
         return True
 
     def run(self):
@@ -194,13 +193,12 @@ class ReferenceCommand(CommandAPI):
             with open(logfile, 'w') as log:
                 system.run_bash(command, stdout=log, stderr=log)
             self.output(output.update, f"Reference log saved in {logfile}", 2)
-        self.output(output.success, 'Done')
 
     def exit(self):
         # Check if results were created
-        self.output(output.status, "Checking folder")
+        self.output(output.status, "Checking reference folder")
         if not system.exists(self.context.get('Reference', 'results')):
-            self.output(output.error, f"Results file was not generated")
+            self.output(output.error, f"Results file was not generated", 2)
             exit(5)
         self.output(output.success, "Done")
 

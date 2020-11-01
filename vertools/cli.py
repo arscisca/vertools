@@ -165,6 +165,13 @@ verify.set_defaults(
     func=commands.VerifyCommand
 )
 
+# Clean
+clean = subparsers.add_parser(
+    'clean',
+    help='Clean log and verification files'
+)
+clean.set_defaults(func=commands.CleanCommand)
+
 # Input generation
 generate_inputs = subparsers.add_parser(
     'generate-inputs',
