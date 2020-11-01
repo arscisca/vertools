@@ -4,9 +4,12 @@ import vertools
 import vertools.cli
 import vertools.context
 
+import engfmt
 
 def main():
     """Main function"""
+    # Setup
+    engfmt.set_preferences(spacer=' ')
     # Generate context
     context = vertools.context.Context()
     global_config = vertools.context.Scope.from_config(vertools.rootdir/'assets/default.config')

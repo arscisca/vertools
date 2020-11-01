@@ -105,7 +105,8 @@ class SimulateCommand(CommandAPI):
         # Overwrite
         with open(clockgen, 'w') as f:
             for line in lines:
-                if 'Ts' not in line:
+                # Find constant declaration line
+                if 'constant Ts' not in line:
                     f.write(line)
                 else:
                     pos = line.find(':=')
