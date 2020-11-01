@@ -98,7 +98,9 @@ class SimulateCommand(CommandAPI):
         self.output(output.status, "Setting up simulation")
         self.output(output.update, "Removing work/ folder", 2)
         system.run_bash('rm -rf work/')
-        self.output(output.success, "Done")
+        self.output(output.update, "Removing old simulation results", 2)
+        system.remove_files(self.context.get('Simulation', 'results'))
+        self.output(output.success, 'Done')
 
     def run(self):
         self.output(output.status, "Running simulation")
@@ -115,6 +117,13 @@ class SimulateCommand(CommandAPI):
             self.output(output.update, f"Simulation log saved in {logfile}", 2)
         self.output(output.success, 'Done')
 
+    def exit(self):
+        # Check if results were created
+        self.output(output.status, "Checking folder")
+        if not system.exists(self.context.get('Simulation', 'results')):
+            self.output(output.error, f"Results file was not generated")
+            exit(5)
+        self.output(output.success, "Done")
 
 class CompareCommand(CommandAPI):
     def setup(self):
@@ -167,6 +176,13 @@ class CompareCommand(CommandAPI):
 
 
 class ReferenceCommand(CommandAPI):
+    def setup(self):
+        self.output(output.status, "Setting up reference")
+        self.output(output.update, "Removing old reference results", 2)
+        system.remove_files(self.context.get('Reference', 'results'))
+        self.output(output.success, "Done")
+        return True
+
     def run(self):
         command = self.context.get('Reference', 'command')
         self.output(output.status, "Launching reference command")
@@ -178,6 +194,14 @@ class ReferenceCommand(CommandAPI):
                 system.run_bash(command, stdout=log, stderr=log)
             self.output(output.update, f"Reference log saved in {logfile}", 2)
         self.output(output.success, 'Done')
+
+    def exit(self):
+        # Check if results were created
+        self.output(output.status, "Checking folder")
+        if not system.exists(self.context.get('Reference', 'results')):
+            self.output(output.error, f"Results file was not generated")
+            exit(5)
+        self.output(output.success, "Done")
 
 
 class ValidateCommand(CommandAPI):
