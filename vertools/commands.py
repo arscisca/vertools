@@ -9,6 +9,13 @@ import vertools.waveforms as waveforms
 
 
 class CommandAPI:
+    """Program command base class
+    Attributes:
+        args (List): command arguments
+        context (vertools.Context): contextualized parameters
+        verbose (bool): flag to allow or block the command's output
+        data (dict): custom data shared between the command phases
+    """
     def __init__(self, args, context, verbose=True):
         self.args = args
         self.context = context
@@ -41,6 +48,9 @@ class CommandAPI:
             return output_func(*args, **kwargs)
 
     def __call__(self):
+        """Run the command by calling the setup, run and exit methods in order.
+        If the setup method returns false, the command aborts.
+        """
         setup_status = self.setup()
         if setup_status is False:
             return

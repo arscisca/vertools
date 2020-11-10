@@ -69,7 +69,7 @@ simulate = subparsers.add_parser(
 )
 simulate.add_argument(
     '-c', '--command',
-    help='simulation script',
+    help='simulation command',
     action=Contextualize,
     section='Simulation',
     parameters='command'
